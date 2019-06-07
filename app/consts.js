@@ -1,1 +1,1 @@
-export const BACKEND_URL = "http://localhost:8000/v1";
+export const BACKEND_URL = "https://just-cars-backend.herokuapp.com/v1";
