@@ -1,29 +1,30 @@
-/*
- * HomeReducer
- *
- * The reducer takes care of our data. Using actions, we can
- * update our application state. To add a new action,
- * add it to the switch statement in the reducer function
- *
- */
-
-import produce from 'immer';
-import { CHANGE_USERNAME } from './constants';
-
-// The initial state of the App
-export const initialState = {
-  username: '',
+export const fetchedOffers = (
+  state = {
+    offers: [],
+    isFetching: false,
+    filterParams: {
+      "priceFrom": "",
+      "priceTo": "",
+      "title": "",
+    },
+  },
+  action,
+) => {
+  switch (action.type) {
+    case 'OFFERS_FETCHED':
+      return { ...state, offers: action.offers, isFetching: false };
+    case 'FETCH_STARTED':
+      return { ...state, isFetching: true };
+    case 'FITER_OFFERS':
+      return { ...state, filterParams: {...state.filterParams, [action.inputName]: action.value}};
+    case 'INIT_FILTERS':
+      return {
+        ...state,
+        filterParams: { ...state.filterParams, ...action.urlParams },
+      };
+    default:
+      return state;
+  }
 };
 
-/* eslint-disable default-case, no-param-reassign */
-const homeReducer = (state = initialState, action) =>
-  produce(state, draft => {
-    switch (action.type) {
-      case CHANGE_USERNAME:
-        // Delete prefixed '@' from the github username
-        draft.username = action.username.replace(/@/gi, '');
-        break;
-    }
-  });
-
-export default homeReducer;
+export default fetchedOffers;

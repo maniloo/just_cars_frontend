@@ -1,16 +1,19 @@
-/**
- * Homepage selectors
- */
+export const getFilteredOffers = (offers, filterParams) => {
+  let { priceFrom, priceTo, title } = filterParams
 
-import { createSelector } from 'reselect';
-import { initialState } from './reducer';
+  priceFrom = parseInt(priceFrom);
+  priceTo = parseInt(priceTo);
+  title = title.toLowerCase();
 
-const selectHome = state => state.home || initialState;
+  return offers.filter(offer => {
+    const { title: offerTitle, price } = offer;
 
-const makeSelectUsername = () =>
-  createSelector(
-    selectHome,
-    homeState => homeState.username,
-  );
+    const arg1 = title == "" || offerTitle.toLowerCase().includes(title);
+    const arg2 = isNaN(priceFrom) || price >= priceFrom;
+    const arg3 = isNaN(priceTo) || price <= priceTo;
 
-export { selectHome, makeSelectUsername };
+    return (
+      arg1 && arg2 && arg3
+    );
+  });
+}

@@ -2,137 +2,85 @@
  * HomePage
  *
  * This is the first thing users see of our App, at the '/' route
+ *
  */
 
-import React, { useEffect, memo } from 'react';
-import PropTypes from 'prop-types';
-import { Helmet } from 'react-helmet';
-import { FormattedMessage } from 'react-intl';
+import React from 'react';
 import { connect } from 'react-redux';
-import { compose } from 'redux';
-import { createStructuredSelector } from 'reselect';
+import queryString from 'query-string';
+import HeaderSection from 'components/HeaderSection';
+import PageWrapper from 'components/PageWrapper';
+import { OffersList, OffersGallery } from './components';
+import { Filters, TitleFilter, OffersSection} from './components/styledComponents'
+import { fetchOffers, filterOffers, initFilters } from './actions';
 
-import { useInjectReducer } from 'utils/injectReducer';
-import { useInjectSaga } from 'utils/injectSaga';
-import {
-  makeSelectRepos,
-  makeSelectLoading,
-  makeSelectError,
-} from 'containers/App/selectors';
-import H2 from 'components/H2';
-import ReposList from 'components/ReposList';
-import AtPrefix from './AtPrefix';
-import CenteredSection from './CenteredSection';
-import Form from './Form';
-import Input from './Input';
-import Section from './Section';
-import messages from './messages';
-import { loadRepos } from '../App/actions';
-import { changeUsername } from './actions';
-import { makeSelectUsername } from './selectors';
-import reducer from './reducer';
-import saga from './saga';
+class HomePage extends React.Component {
+  componentDidMount() {
+    const { fetchOffers, location, initFilters } = this.props;
+    fetchOffers();
+    const params = queryString.parse(location.search);
+    initFilters(params);
+  }
 
-const key = 'home';
+  handleChangeFilterParam = (e, paramName) => {
+    const { filterOffers, location, history } = this.props;
+    filterOffers(e.currentTarget.value, paramName);
+    const params = queryString.parse(location.search);
 
-export function HomePage({
-  username,
-  loading,
-  error,
-  repos,
-  onSubmitForm,
-  onChangeUsername,
-}) {
-  useInjectReducer({ key, reducer });
-  useInjectSaga({ key, saga });
-
-  useEffect(() => {
-    // When initial state username is not null, submit the form to load repos
-    if (username && username.trim().length > 0) onSubmitForm();
-  }, []);
-
-  const reposListProps = {
-    loading,
-    error,
-    repos,
+    params[paramName] = e.currentTarget.value;
+    const searchString = queryString.stringify(params);
+    history.push({ search: searchString });
   };
 
-  return (
-    <article>
-      <Helmet>
-        <title>Home Page</title>
-        <meta
-          name="description"
-          content="A React.js Boilerplate application homepage"
-        />
-      </Helmet>
-      <div>
-        <CenteredSection>
-          <H2>
-            <FormattedMessage {...messages.startProjectHeader} />
-          </H2>
-          <p>
-            <FormattedMessage {...messages.startProjectMessage} />
-          </p>
-        </CenteredSection>
-        <Section>
-          <H2>
-            <FormattedMessage {...messages.trymeHeader} />
-          </H2>
-          <Form onSubmit={onSubmitForm}>
-            <label htmlFor="username">
-              <FormattedMessage {...messages.trymeMessage} />
-              <AtPrefix>
-                <FormattedMessage {...messages.trymeAtPrefix} />
-              </AtPrefix>
-              <Input
-                id="username"
+  render() {
+    return (
+      <PageWrapper>
+        <HeaderSection>
+          <Filters>
+            <div>
+              Cena:{' '}
+              <input
                 type="text"
-                placeholder="mxstbr"
-                value={username}
-                onChange={onChangeUsername}
+                placeholder="Cena od:"
+                value={this.props.priceFrom}
+                onChange={e => this.handleChangeFilterParam(e, 'priceFrom')}
+              />{' '}
+              &nbsp;
+              <input
+                type="text"
+                placeholder="Cena do:"
+                value={this.props.priceTo}
+                onChange={e => this.handleChangeFilterParam(e, 'priceTo')}
               />
-            </label>
-          </Form>
-          <ReposList {...reposListProps} />
-        </Section>
-      </div>
-    </article>
-  );
+            </div>
+            <TitleFilter>
+              Tytuł:{' '}
+              <input
+                type="text"
+                placeholder="Tytuł"
+                value={this.props.title}
+                onChange={e => this.handleChangeFilterParam(e, 'title')}
+              />
+            </TitleFilter>
+          </Filters>
+        </HeaderSection>
+        <OffersSection>
+          <OffersGallery />
+          <OffersList offers={this.props.offers} />
+        </OffersSection>
+      </PageWrapper>
+    );
+  }
 }
 
-HomePage.propTypes = {
-  loading: PropTypes.bool,
-  error: PropTypes.oneOfType([PropTypes.object, PropTypes.bool]),
-  repos: PropTypes.oneOfType([PropTypes.array, PropTypes.bool]),
-  onSubmitForm: PropTypes.func,
-  username: PropTypes.string,
-  onChangeUsername: PropTypes.func,
-};
-
-const mapStateToProps = createStructuredSelector({
-  repos: makeSelectRepos(),
-  username: makeSelectUsername(),
-  loading: makeSelectLoading(),
-  error: makeSelectError(),
+const mapDispatchToProps = { fetchOffers, filterOffers, initFilters };
+const mapStateToProps = ({ offersState: { filterParams } }) => ({
+  priceFrom: filterParams.priceFrom,
+  priceTo: filterParams.priceTo,
+  title: filterParams.title,
 });
 
-export function mapDispatchToProps(dispatch) {
-  return {
-    onChangeUsername: evt => dispatch(changeUsername(evt.target.value)),
-    onSubmitForm: evt => {
-      if (evt !== undefined && evt.preventDefault) evt.preventDefault();
-      dispatch(loadRepos());
-    },
-  };
-}
-
-const withConnect = connect(
+export default connect(
   mapStateToProps,
   mapDispatchToProps,
-);
-
-export default compose(
-  withConnect,
-  memo,
 )(HomePage);
